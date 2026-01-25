@@ -1,10 +1,9 @@
 package app
 
 import (
+	"github.com/dannieey/Assignment3_Absolute/internal/router"
 	"net/http"
 	"os"
-
-	"Assignment3_Absolute/internal/router"
 )
 
 type App struct {

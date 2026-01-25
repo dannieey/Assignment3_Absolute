@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"Assignment3_Absolute/internal/app"
+	"github.com/dannieey/Assignment3_Absolute/internal/app"
 )
 
 func main() {
