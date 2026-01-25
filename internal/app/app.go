@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"Assignment3_Absolute/internal/router"
+	"github.com/dannieey/Assignment3_Absolute/internal/router"
 )
 
 type App struct {
