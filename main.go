@@ -7,6 +7,7 @@ import (
 
 	"github.com/dannieey/Assignment3_Absolute/internal/db"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
+	"github.com/dannieey/Assignment3_Absolute/internal/app"
 )
 
 func main() {
