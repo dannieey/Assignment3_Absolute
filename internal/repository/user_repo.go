@@ -3,7 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/dannieey/Assignment3_Absolute/internal/db"
+	"github.com/dannieey/Assignment3_Absolute/internal/models"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,44 +12,58 @@ import (
 	"time"
 )
 
-type User struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty"`
-	FullName     string             `bson:"fullname"`
-	Email        string             `bson:"email"`
-	PasswordHash string             `bson:"password_hash"`
-	Role         string             `bson:"role"`
-	CreatedAt    time.Time          `bson:"createdAt"`
-}
-
 type UserRepo interface {
-	Create(ctx context.Context, user *User) error
-	GetByID(ctx context.Context, id primitive.ObjectID) (*User, error)
-	Update(ctx context.Context, user *User) error
+	Create(ctx context.Context, u *models.User) (primitive.ObjectID, error)
+	FindByID(ctx context.Context, id primitive.ObjectID) (*models.User, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	List(ctx context.Context) ([]models.User, error)
 	Delete(ctx context.Context, id primitive.ObjectID) error
 }
 type userRepo struct {
-	collection *mongo.Collection
+	col *mongo.Collection
 }
 
-func NewUserRepo() UserRepo {
-	return &userRepo{
-		collection: db.GetCollection("supermarket", "users"),
+func NewUserRepo(db *mongo.Database) UserRepo {
+	return &userRepo{col: db.Collection("users")}
+}
+func (r *userRepo) Create(ctx context.Context, u *models.User) (primitive.ObjectID, error) {
+	if u.CreatedAt.IsZero() {
+		u.CreatedAt = time.Now()
 	}
+	res, err := r.col.InsertOne(ctx, u)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	id, _ := res.InsertedID.(primitive.ObjectID)
+	return id, nil
 }
-
-// CRUD stubs
-func (r *userRepo) Create(ctx context.Context, user *User) error {
-
-	return nil
+func (r *userRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+	var u models.User
+	if err := r.col.FindOne(ctx, bson.M{"_id": id}).Decode(&u); err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
-func (r *userRepo) GetByID(ctx context.Context, id primitive.ObjectID) (*User, error) {
-
-	return nil, nil
+func (r *userRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+	var u models.User
+	if err := r.col.FindOne(ctx, bson.M{"email": email}).Decode(&u); err != nil {
+		return nil, err
+	}
+	return &u, nil
 }
-
-func (r *userRepo) Update(ctx context.Context, user *User) error {
-	return nil
+func (r *userRepo) List(ctx context.Context) ([]models.User, error) {
+	cur, err := r.col.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var list []models.User
+	if err := cur.All(ctx, &list); err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 func (r *userRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
-	return nil
+	_, err := r.col.DeleteOne(ctx, bson.M{"_id": id})
+	return err
 }
