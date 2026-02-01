@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/db"
+	"github.com/dannieey/Assignment3_Absolute/internal/handler"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
 )
 
@@ -23,17 +25,24 @@ func main() {
 			log.Println("Error disconnecting MongoDB:", err)
 		}
 	}()
+	database := client.Database("supermarket")
 
-	productRepo := repository.NewProductRepo()
-	categoryRepo := repository.NewCategoryRepo()
-	brandRepo := repository.NewBrandRepo()
-	orderRepo := repository.NewOrderRepo()
-
-	_ = productRepo
-	_ = categoryRepo
-	_ = brandRepo
-	_ = orderRepo
+	productRepo := repository.NewProductRepo(database)
+	orderRepo := repository.NewOrderRepo(database)
 
 	log.Println("Application started successfully")
 
+	ph := handler.NewProductHandler(productRepo)
+	oh := handler.NewOrderHandler(orderRepo)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /products", ph.List)
+	mux.HandleFunc("POST /products", ph.Create)
+
+	mux.HandleFunc("POST /orders", oh.Create)
+	mux.HandleFunc("GET /orders/history", oh.History)
+
+	log.Println("Server running on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
 }
