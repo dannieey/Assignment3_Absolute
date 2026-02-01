@@ -9,6 +9,7 @@ import (
 	"github.com/dannieey/Assignment3_Absolute/internal/db"
 	"github.com/dannieey/Assignment3_Absolute/internal/handler"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
+	"github.com/dannieey/Assignment3_Absolute/internal/service"
 )
 
 func main() {
@@ -29,17 +30,38 @@ func main() {
 
 	productRepo := repository.NewProductRepo(database)
 	orderRepo := repository.NewOrderRepo(database)
+	orderService := service.NewOrderService(orderRepo)
 
 	log.Println("Application started successfully")
 
 	ph := handler.NewProductHandler(productRepo)
-	oh := handler.NewOrderHandler(orderRepo)
+	oh := handler.NewOrderHandler(orderService)
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /products", ph.List)
-	mux.HandleFunc("POST /products", ph.Create)
+	mux.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			ph.List(w, r)
+		} else if r.Method == http.MethodPost {
+			ph.Create(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
-	mux.HandleFunc("POST /orders", oh.Create)
-	mux.HandleFunc("GET /orders/history", oh.History)
+	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			oh.Create(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/orders/history", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			oh.History(w, r)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
