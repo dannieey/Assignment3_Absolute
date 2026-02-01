@@ -4,55 +4,74 @@ import (
 	"context"
 	"time"
 
+	"github.com/dannieey/Assignment3_Absolute/internal/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Order struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	UserID     primitive.ObjectID `bson:"user_id"`
-	Status     string             `bson:"status"`
-	TotalPrice float64            `bson:"total_price"`
-	CreatedAt  time.Time          `bson:"created_at"`
-	UpdatedAt  time.Time          `bson:"updated_at"`
-	Items      []OrderItem        `bson:"items"`
-}
-
-type OrderItem struct {
-	ProductID primitive.ObjectID `bson:"product_id"`
-	Quantity  int                `bson:"quantity"`
-	Price     float64            `bson:"price"`
-}
 type OrderRepo interface {
-	Create(ctx context.Context, order *Order) error
-	FindByID(ctx context.Context, id primitive.ObjectID) (*Order, error)
-	FindByUserID(ctx context.Context, userID primitive.ObjectID) ([]Order, error)
-	Update(ctx context.Context, id primitive.ObjectID, order *Order) error
+	Create(ctx context.Context, o *models.Order) (primitive.ObjectID, error)
+	FindByID(ctx context.Context, id primitive.ObjectID) (*models.Order, error)
+	FindByUserID(ctx context.Context, userID primitive.ObjectID) ([]models.Order, error)
+	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 }
+
 type orderRepo struct {
-	collection *mongo.Collection
+	col *mongo.Collection
 }
 
-func NewOrderRepo() CategoryRepo {
-	return nil
+func NewOrderRepo(db *mongo.Database) OrderRepo {
+	return &orderRepo{col: db.Collection("orders")}
 }
-func (repo *orderRepo) Create(ctx context.Context, order *Order) error {
-	return nil
+func (r *orderRepo) Create(ctx context.Context, o *models.Order) (primitive.ObjectID, error) {
+	now := time.Now()
+	o.CreatedAt = now
+	o.UpdatedAt = now
+	if o.Status == "" {
+		o.Status = "NEW"
+	}
+	res, err := r.col.InsertOne(ctx, o)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	id, _ := res.InsertedID.(primitive.ObjectID)
+	return id, nil
 }
-
-func (repo *orderRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*Order, error) {
-	return nil, nil
+func (r *orderRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*models.Order, error) {
+	var o models.Order
+	if err := r.col.FindOne(ctx, bson.M{"_id": id}).Decode(&o); err != nil {
+		return nil, err
+	}
+	return &o, nil
 }
-
-func (repo *orderRepo) FindByUserID(ctx context.Context, userID primitive.ObjectID) ([]Order, error) {
-	return nil, nil
+func (r *orderRepo) FindByUserID(ctx context.Context, userID primitive.ObjectID) ([]models.Order, error) {
+	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+	cur, err := r.col.Find(ctx, bson.M{"user_id": userID}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var list []models.Order
+	if err := cur.All(ctx, &list); err != nil {
+		return nil, err
+	}
+	return list, nil
 }
-
-func (repo *orderRepo) Update(ctx context.Context, order *Order) error {
-	return nil
+func (r *orderRepo) UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+	_, err := r.col.UpdateOne(
+		ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{
+			"status":     status,
+			"updated_at": time.Now(),
+		}},
+	)
+	return err
 }
-
-func (repo *orderRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
-	return nil
+func (r *orderRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
+	_, err := r.col.DeleteOne(ctx, bson.M{"_id": id})
+	return err
 }

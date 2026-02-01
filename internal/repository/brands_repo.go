@@ -4,49 +4,68 @@ import (
 	"context"
 	"time"
 
+	"github.com/dannieey/Assignment3_Absolute/internal/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Brand struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	Name      string             `bson:"name"`
-	Country   string             `bson:"country"`
-	CreatedAt time.Time          `bson:"createdAt"`
-}
-
 type BrandRepo interface {
-	Create(ctx context.Context, brand *Brand) error
-	FindByID(ctx context.Context, id primitive.ObjectID) (*Brand, error)
-	FindAll(ctx context.Context) ([]Brand, error)
-	Update(ctx context.Context, brand *Brand) error
+	Create(ctx context.Context, b *models.Brand) (primitive.ObjectID, error)
+	FindByID(ctx context.Context, id primitive.ObjectID) (*models.Brand, error)
+	List(ctx context.Context) ([]models.Brand, error)
+	Update(ctx context.Context, id primitive.ObjectID, b *models.Brand) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 }
-
 type brandRepo struct {
-	collection *mongo.Collection
+	col *mongo.Collection
 }
 
-func NewBrandRepo() BrandRepo {
-	return nil
+func NewBrandRepo(db *mongo.Database) BrandRepo {
+	return &brandRepo{col: db.Collection("brands")}
 }
-
-func (repo *brandRepo) Create(ctx context.Context, brand *Brand) error {
-	return nil
+func (r *brandRepo) Create(ctx context.Context, b *models.Brand) (primitive.ObjectID, error) {
+	if b.CreatedAt.IsZero() {
+		b.CreatedAt = time.Now()
+	}
+	res, err := r.col.InsertOne(ctx, b)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	id, _ := res.InsertedID.(primitive.ObjectID)
+	return id, nil
 }
-
-func (repo *brandRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*Brand, error) {
-	return nil, nil
+func (r *brandRepo) FindByID(ctx context.Context, id primitive.ObjectID) (*models.Brand, error) {
+	var b models.Brand
+	if err := r.col.FindOne(ctx, bson.M{"_id": id}).Decode(&b); err != nil {
+		return nil, err
+	}
+	return &b, nil
 }
-
-func (repo *brandRepo) FindAll(ctx context.Context) ([]Brand, error) {
-	return nil, nil
+func (r *brandRepo) List(ctx context.Context) ([]models.Brand, error) {
+	cur, err := r.col.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var list []models.Brand
+	if err := cur.All(ctx, &list); err != nil {
+		return nil, err
+	}
+	return list, nil
 }
-
-func (repo *brandRepo) Update(ctx context.Context, brand *Brand) error {
-	return nil
+func (r *brandRepo) Update(ctx context.Context, id primitive.ObjectID, b *models.Brand) error {
+	_, err := r.col.UpdateOne(
+		ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{
+			"name":    b.Name,
+			"country": b.Country,
+		}},
+	)
+	return err
 }
-
-func (repo *brandRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
-	return nil
+func (r *brandRepo) Delete(ctx context.Context, id primitive.ObjectID) error {
+	_, err := r.col.DeleteOne(ctx, bson.M{"_id": id})
+	return err
 }
