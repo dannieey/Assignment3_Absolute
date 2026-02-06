@@ -15,6 +15,9 @@ type Product struct {
 	CategoryID         primitive.ObjectID `json:"categoryId" bson:"category_id"`
 	Price              float64            `json:"price" bson:"price"`
 	Currency           string             `json:"currency" bson:"currency"`
+	Aisle              string             `json:"aisle" bson:"aisle"`
+	Section            string             `json:"section" bson:"section"`
+	Shelf              string             `json:"shelf" bson:"shelf"`
 	StockQty           int                `json:"stockQty" bson:"stock_qty"`
 	AvailabilityStatus string             `json:"availabilityStatus" bson:"availability_status"`
 	ImageURL           string             `json:"imageUrl" bson:"image_url"`
