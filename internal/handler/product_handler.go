@@ -5,59 +5,89 @@ import (
 	"net/http"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/models"
-	"github.com/dannieey/Assignment3_Absolute/internal/repository"
+	"github.com/dannieey/Assignment3_Absolute/internal/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProductHandler struct {
-	repo repository.ProductRepo
+	service *service.ProductService
 }
 
-func NewProductHandler(repo repository.ProductRepo) *ProductHandler {
-	return &ProductHandler{repo: repo}
+func NewProductHandler(s *service.ProductService) *ProductHandler {
+	return &ProductHandler{service: s}
 }
+
+// customer+staff
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cat := r.URL.Query().Get("categoryId")
+
 	var catID *primitive.ObjectID
 	if cat != "" {
 		id, err := primitive.ObjectIDFromHex(cat)
-		if err != nil {
-			http.Error(w, "Invalid categoryId", http.StatusBadRequest)
-			return
+		if err == nil {
+			catID = &id
 		}
-		catID = &id
-	}
-	products, err := h.repo.List(r.Context(), q, catID)
-	if err != nil {
-		http.Error(w, "Failed to fetch products: "+err.Error(), http.StatusInternalServerError)
-		return
 	}
 
+	products, err := h.service.List(r.Context(), q, catID)
+	if err != nil {
+		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		return
+	}
 	writeJSON(w, http.StatusOK, products)
 }
+
+// staff
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var p models.Product
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	if p.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
-		return
-	}
-	if p.Currency == "" {
-		p.Currency = "KZT"
-	}
-	if p.AvailabilityStatus == "" {
-		p.AvailabilityStatus = "IN_STOCK"
-	}
 
-	id, err := h.repo.Create(r.Context(), &p)
+	id, err := h.service.Create(r.Context(), &p)
 	if err != nil {
-		http.Error(w, "Failed to create product: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"id": id.Hex()})
+}
+
+// staff
+func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{"id": id.Hex()})
+	var p models.Product
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.Update(r.Context(), id, &p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Product updated"})
+}
+
+// staff only
+func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.Delete(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Product deleted"})
 }
