@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/dannieey/Assignment3_Absolute/internal/models"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -55,4 +56,12 @@ func (s *ProductService) DecreaseStock(ctx context.Context, id primitive.ObjectI
 		return nil // или ошибка валидации
 	}
 	return s.repo.DecreaseStock(ctx, id, qty)
+}
+func (s *ProductService) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Product, error) {
+	p, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	s.applyAvailabilityLogic(p)
+	return p, nil
 }

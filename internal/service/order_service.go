@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -28,13 +29,41 @@ func NewOrderService(repo repository.OrderRepo, prodService *ProductService) *Or
 	return s
 }
 func (s *OrderService) Create(ctx context.Context, order *models.Order) (primitive.ObjectID, error) {
-	id, err := s.repo.Create(ctx, order)
-	if err != nil {
-		return primitive.NilObjectID, err
+	if order.UserID == primitive.NilObjectID {
+		return primitive.NilObjectID, fmt.Errorf("userId missing")
 	}
-	s.orderQueue <- id
-	return id, nil
+	if len(order.Items) == 0 {
+		return primitive.NilObjectID, fmt.Errorf("items missing")
+	}
+
+	// 1) Calculate prices from DB and reserve stock immediately
+	var total float64
+
+	for i := range order.Items {
+		item := &order.Items[i]
+
+		// get product by id (add this method in ProductService, see below)
+		p, err := s.productService.GetByID(ctx, item.ProductID)
+		if err != nil {
+			return primitive.NilObjectID, fmt.Errorf("product not found: %s", item.ProductID.Hex())
+		}
+
+		// reserve stock NOW (atomic condition inside repo)
+		if err := s.productService.DecreaseStock(ctx, item.ProductID, item.Quantity); err != nil {
+			return primitive.NilObjectID, fmt.Errorf("not enough stock for product %s", item.ProductID.Hex())
+		}
+
+		item.Price = p.Price
+		total += p.Price * float64(item.Quantity)
+	}
+
+	order.TotalPrice = total
+	order.Status = "NEW"
+
+	// 2) Save order
+	return s.repo.Create(ctx, order)
 }
+
 func (s *OrderService) GetHistory(ctx context.Context, userID primitive.ObjectID) ([]models.Order, error) {
 	return s.repo.FindByUserID(ctx, userID)
 }
@@ -54,21 +83,14 @@ func (s *OrderService) startWorker() {
 func (s *OrderService) processOrder(orderID primitive.ObjectID) {
 	log.Printf("[worker] Start processing order %s", orderID.Hex())
 	time.Sleep(2 * time.Second)
-	order, err := s.repo.FindByID(context.Background(), orderID)
-	if err != nil {
-		log.Printf("[worker] Order %s not found: %v", orderID.Hex(), err)
-		return
-	}
-	for _, item := range order.Items {
-		err := s.productService.DecreaseStock(context.Background(), item.ProductID, item.Quantity)
-		if err != nil {
-			log.Printf("[worker] Failed to update stock for product %s: %v", item.ProductID, err)
-			continue
-		}
-	}
 
-	log.Printf("[worker] Finished processing order %s. Inventory updated.", orderID.Hex())
+	_ = s.repo.UpdateStatus(context.Background(), orderID, "PROCESSING")
+	time.Sleep(2 * time.Second)
+	_ = s.repo.UpdateStatus(context.Background(), orderID, "DONE")
+
+	log.Printf("[worker] Finished processing order %s", orderID.Hex())
 }
+
 func (s *OrderService) StopWorker() {
 	s.workerQuitCh <- true
 }
