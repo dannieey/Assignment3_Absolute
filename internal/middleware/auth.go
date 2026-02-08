@@ -19,7 +19,7 @@ const (
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
-		if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
+		if !strings.HasPrefix(auth, "Bearer ") {
 			http.Error(w, "Missing token", http.StatusUnauthorized)
 			return
 		}
@@ -53,15 +53,13 @@ func RequireAuth(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), CtxUserID, sub)
 		ctx = context.WithValue(ctx, CtxRole, role)
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
-func RequireRole(required string, next http.Handler) http.Handler {
+func RequireRole(requiredRole string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		role, _ := r.Context().Value(CtxRole).(string)
-		if role != required && role != "admin" {
+		if role != requiredRole {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}
