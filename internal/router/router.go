@@ -1,13 +1,13 @@
 package router
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/db"
 	"github.com/dannieey/Assignment3_Absolute/internal/handler"
-	"github.com/dannieey/Assignment3_Absolute/internal/middleware"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
 	"github.com/dannieey/Assignment3_Absolute/internal/service"
 )
@@ -17,7 +17,7 @@ func New() (http.Handler, error) {
 
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017"
+		return nil, errors.New("MONGO_URI environment variable not set")
 	}
 	client, err := db.ConnectDB(mongoURI)
 	if err != nil {
@@ -33,16 +33,12 @@ func New() (http.Handler, error) {
 	productRepo := repository.NewProductRepo(database)
 	orderRepo := repository.NewOrderRepo(database)
 	userRepo := repository.NewUserRepo(database)
-	categoryRepo := repository.NewCategoryRepo(database)
-	brandRepo := repository.NewBrandRepo(database)
 
-	_ = categoryRepo
-	_ = brandRepo
-
-	orderService := service.NewOrderService(orderRepo)
 	productService := service.NewProductService(productRepo)
+	orderService := service.NewOrderService(orderRepo, productService)
 	authService := service.NewAuthService(userRepo)
 
+	ph := handler.NewProductHandler(productService)
 	oh := handler.NewOrderHandler(orderService)
 	ah := handler.NewAuthHandler(authService)
 
@@ -67,43 +63,58 @@ func New() (http.Handler, error) {
 		ah.Login(w, r)
 	})
 
-	mux.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			ph.List(w, r)
-		case http.MethodPost:
-			ph.Create(w, r)
-		default:
+	mux.Handle("/products", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
 		}
-	})
+		ph.List(w, r)
+	}))
 
-	mux.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/orders", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 		oh.Create(w, r)
-	})
+	})))
 
-	mux.HandleFunc("/orders/history", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/orders/history", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 		oh.History(w, r)
-	})
+	})))
 
-	mux.Handle("/staff/ping",
-		middleware.RequireAuth(
-			middleware.RequireRole("staff",
-				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusOK)
-					_, _ = w.Write([]byte("staff ok"))
-				}),
-			),
-		),
-	)
+	mux.Handle("/staff/products", StaffOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ph.Create(w, r)
+	})))
+
+	mux.Handle("/staff/products/update", StaffOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPatch {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ph.Update(w, r)
+	})))
+
+	mux.Handle("/staff/products/delete", StaffOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ph.Delete(w, r)
+	})))
+
+	mux.Handle("/staff/ping", StaffOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("staff ok"))
+	})))
 
 	log.Println("Router initialized")
 	return mux, nil
