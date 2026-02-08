@@ -11,16 +11,18 @@ import (
 )
 
 type OrderService struct {
-	repo         repository.OrderRepo
-	orderQueue   chan primitive.ObjectID // канал для фоновой обработки
-	workerQuitCh chan bool               // для остановки воркера (опционально)
+	repo           repository.OrderRepo
+	orderQueue     chan primitive.ObjectID // канал для фоновой обработки
+	workerQuitCh   chan bool               // для остановки воркера (опционально)
+	productService *ProductService
 }
 
-func NewOrderService(repo repository.OrderRepo) *OrderService {
+func NewOrderService(repo repository.OrderRepo, prodService *ProductService) *OrderService {
 	s := &OrderService{
-		repo:         repo,
-		orderQueue:   make(chan primitive.ObjectID, 100), // буфер для 100 заказов
-		workerQuitCh: make(chan bool),
+		repo:           repo,
+		productService: prodService,
+		orderQueue:     make(chan primitive.ObjectID, 100),
+		workerQuitCh:   make(chan bool),
 	}
 	go s.startWorker() // запускаем воркер в фоне
 	return s
@@ -48,10 +50,24 @@ func (s *OrderService) startWorker() {
 		}
 	}
 }
+
 func (s *OrderService) processOrder(orderID primitive.ObjectID) {
 	log.Printf("[worker] Start processing order %s", orderID.Hex())
-	time.Sleep(2 * time.Second) // эмуляция обработки
-	log.Printf("[worker] Finished processing order %s", orderID.Hex())
+	time.Sleep(2 * time.Second)
+	order, err := s.repo.FindByID(context.Background(), orderID)
+	if err != nil {
+		log.Printf("[worker] Order %s not found: %v", orderID.Hex(), err)
+		return
+	}
+	for _, item := range order.Items {
+		err := s.productService.DecreaseStock(context.Background(), item.ProductID, item.Quantity)
+		if err != nil {
+			log.Printf("[worker] Failed to update stock for product %s: %v", item.ProductID, err)
+			continue
+		}
+	}
+
+	log.Printf("[worker] Finished processing order %s. Inventory updated.", orderID.Hex())
 }
 func (s *OrderService) StopWorker() {
 	s.workerQuitCh <- true
