@@ -1,17 +1,21 @@
 package app
 
 import (
-	"github.com/dannieey/Assignment3_Absolute/internal/router"
 	"net/http"
 	"os"
+
+	"github.com/dannieey/Assignment3_Absolute/internal/router"
 )
 
 type App struct {
 	server *http.Server
 }
 
-func New() *App {
-	r := router.New()
+func New() (*App, error) {
+	r, err := router.New()
+	if err != nil {
+		return nil, err
+	}
 
 	addr := ":8080"
 	if p := os.Getenv("PORT"); p != "" {
@@ -23,7 +27,7 @@ func New() *App {
 			Addr:    addr,
 			Handler: r,
 		},
-	}
+	}, nil
 }
 
 func (a *App) Run() error {
