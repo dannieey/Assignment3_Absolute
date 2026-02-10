@@ -1,35 +1,90 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Header } from './components/Header'
+import { Footer } from './components/Footer'
+import { HomePage } from './pages/HomePage'
+import { ProfilePage } from './pages/ProfilePage'
+import { CartPage } from './pages/CartPage'
+import { WishlistPage } from './pages/WishlistPage'
+import { TrackOrderPage } from './pages/TrackOrderPage'
+import { LoginPage } from './pages/LoginPage'
+import { OrdersPage } from './pages/OrdersPage'
+import { ProductsPage } from './pages/ProductsPage'
+import { useAuth } from './auth'
+import { cartApi, profileApi, wishlistApi } from './api'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const auth = useAuth()
+  const [searchQuery, setSearchQuery] = useState('')
+  const nav = useNavigate()
+  const location = useLocation()
+
+  const [userLabel, setUserLabel] = useState('Guest')
+  const [cartCount, setCartCount] = useState(0)
+  const [wishlistCount, setWishlistCount] = useState(0)
+
+  async function refreshBadges() {
+    if (!auth.isAuthed) {
+      setUserLabel('Guest')
+      setCartCount(0)
+      setWishlistCount(0)
+      return
+    }
+
+    try {
+      const p = await profileApi.get()
+      setUserLabel(p?.fullName || p?.email || 'User')
+    } catch {
+      setUserLabel('User')
+    }
+
+    try {
+      const c = await cartApi.get()
+      setCartCount(c?.totalItems || 0)
+    } catch {
+      setCartCount(0)
+    }
+
+    try {
+      const w = await wishlistApi.get()
+      const items = w?.items || w
+      setWishlistCount(Array.isArray(items) ? items.length : 0)
+    } catch {
+      setWishlistCount(0)
+    }
+  }
+
+  useEffect(() => {
+    refreshBadges()
+  }, [auth.isAuthed])
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen flex flex-col">
+      <Header
+        cartCount={cartCount}
+        wishlistCount={wishlistCount}
+        userLabel={userLabel}
+        onSearch={(q) => {
+          const qq = (q || '').trim()
+          setSearchQuery(qq)
+          if (location.pathname !== '/') nav('/')
+        }}
+      />
+
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<HomePage searchQuery={searchQuery} auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
+          <Route path="/products" element={<ProductsPage auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
+          <Route path="/login" element={<LoginPage auth={auth} />} />
+          <Route path="/profile" element={<ProfilePage auth={auth} />} />
+          <Route path="/cart" element={<CartPage auth={auth} />} />
+          <Route path="/wishlist" element={<WishlistPage auth={auth} />} />
+          <Route path="/track" element={<TrackOrderPage />} />
+          <Route path="/orders" element={<OrdersPage auth={auth} />} />
+        </Routes>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      <Footer />
+    </div>
   )
 }
-
-export default App
