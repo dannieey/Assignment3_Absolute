@@ -93,6 +93,14 @@ func New() (http.Handler, error) {
 		oh.History(w, r)
 	})))
 
+	mux.Handle("/orders/tracking", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		oh.GetTracking(w, r)
+	})))
+
 	mux.Handle("/staff/products", StaffOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
