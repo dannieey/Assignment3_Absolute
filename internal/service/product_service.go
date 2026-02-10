@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/models"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
@@ -59,6 +60,18 @@ func (s *ProductService) DecreaseStock(ctx context.Context, id primitive.ObjectI
 }
 func (s *ProductService) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Product, error) {
 	p, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	s.applyAvailabilityLogic(p)
+	return p, nil
+}
+
+func (s *ProductService) GetByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	if barcode == "" {
+		return nil, fmt.Errorf("barcode is required")
+	}
+	p, err := s.repo.FindByBarcode(ctx, barcode)
 	if err != nil {
 		return nil, err
 	}
