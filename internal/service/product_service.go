@@ -54,7 +54,7 @@ func (s *ProductService) applyAvailabilityLogic(p *models.Product) {
 
 func (s *ProductService) DecreaseStock(ctx context.Context, id primitive.ObjectID, qty int) error {
 	if qty <= 0 {
-		return nil // или ошибка валидации
+		return nil
 	}
 	return s.repo.DecreaseStock(ctx, id, qty)
 }
@@ -77,4 +77,15 @@ func (s *ProductService) GetByBarcode(ctx context.Context, barcode string) (*mod
 	}
 	s.applyAvailabilityLogic(p)
 	return p, nil
+}
+
+func (s *ProductService) ListWithFilter(ctx context.Context, filter repository.ProductFilter) (*repository.ProductListResult, error) {
+	result, err := s.repo.ListWithFilter(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	for i := range result.Products {
+		s.applyAvailabilityLogic(&result.Products[i])
+	}
+	return result, nil
 }

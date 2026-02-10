@@ -3,8 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/models"
+	"github.com/dannieey/Assignment3_Absolute/internal/repository"
 	"github.com/dannieey/Assignment3_Absolute/internal/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -17,7 +19,6 @@ func NewProductHandler(s *service.ProductService) *ProductHandler {
 	return &ProductHandler{service: s}
 }
 
-// customer+staff
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cat := r.URL.Query().Get("categoryId")
@@ -36,6 +37,66 @@ func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, products)
+}
+
+func (h *ProductHandler) ListWithFilter(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	filter := repository.ProductFilter{
+		Query:     query.Get("q"),
+		SortBy:    query.Get("sortBy"),
+		SortOrder: 1,
+		Page:      1,
+		Limit:     12,
+	}
+
+	if catID := query.Get("categoryId"); catID != "" {
+		id, err := primitive.ObjectIDFromHex(catID)
+		if err == nil {
+			filter.CategoryID = &id
+		}
+	}
+
+	if brandID := query.Get("brandId"); brandID != "" {
+		id, err := primitive.ObjectIDFromHex(brandID)
+		if err == nil {
+			filter.BrandID = &id
+		}
+	}
+
+	if minPrice := query.Get("minPrice"); minPrice != "" {
+		if val, err := strconv.ParseFloat(minPrice, 64); err == nil {
+			filter.MinPrice = &val
+		}
+	}
+	if maxPrice := query.Get("maxPrice"); maxPrice != "" {
+		if val, err := strconv.ParseFloat(maxPrice, 64); err == nil {
+			filter.MaxPrice = &val
+		}
+	}
+
+	if order := query.Get("order"); order == "desc" {
+		filter.SortOrder = -1
+	}
+
+	if page := query.Get("page"); page != "" {
+		if val, err := strconv.Atoi(page); err == nil {
+			filter.Page = val
+		}
+	}
+	if limit := query.Get("limit"); limit != "" {
+		if val, err := strconv.Atoi(limit); err == nil {
+			filter.Limit = val
+		}
+	}
+
+	result, err := h.service.ListWithFilter(r.Context(), filter)
+	if err != nil {
+		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
 }
 
 // staff
