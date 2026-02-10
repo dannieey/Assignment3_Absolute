@@ -10,19 +10,38 @@ import (
 )
 
 type CategoryHandler struct {
-	repo repository.CategoryRepo
+	repo        repository.CategoryRepo
+	productRepo repository.ProductRepo
 }
 
-func NewCategoryHandler(repo repository.CategoryRepo) *CategoryHandler {
-	return &CategoryHandler{repo: repo}
+func NewCategoryHandler(repo repository.CategoryRepo, productRepo repository.ProductRepo) *CategoryHandler {
+	return &CategoryHandler{repo: repo, productRepo: productRepo}
 }
+
+type categoryWithCount struct {
+	models.Category
+	ItemsCount int64 `json:"itemsCount"`
+}
+
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	cats, err := h.repo.List(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, cats)
+
+	out := make([]categoryWithCount, 0, len(cats))
+	for _, c := range cats {
+		cnt := int64(0)
+		if h.productRepo != nil {
+			if n, err := h.productRepo.CountByCategory(r.Context(), c.ID); err == nil {
+				cnt = n
+			}
+		}
+		out = append(out, categoryWithCount{Category: c, ItemsCount: cnt})
+	}
+
+	writeJSON(w, http.StatusOK, out)
 }
 
 // STAFF

@@ -103,6 +103,11 @@ export function ProfilePage({ auth }) {
             <Link to="/track" className="px-4 py-2 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500">
               Track order
             </Link>
+            {String(profile?.role || '').toLowerCase() === 'staff' ? (
+              <Link to="/staff" className="px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50">
+                Staff panel
+              </Link>
+            ) : null}
           </div>
         </div>
       </Container>
