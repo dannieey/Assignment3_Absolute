@@ -91,3 +91,19 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Product deleted"})
 }
+
+func (h *ProductHandler) FindByBarcode(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		http.Error(w, "code is required", http.StatusBadRequest)
+		return
+	}
+
+	p, err := h.service.GetByBarcode(r.Context(), code)
+	if err != nil {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, p)
+}

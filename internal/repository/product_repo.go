@@ -19,6 +19,7 @@ type ProductRepo interface {
 	Delete(ctx context.Context, id primitive.ObjectID) error
 
 	DecreaseStock(ctx context.Context, productID primitive.ObjectID, qty int) error
+	FindByBarcode(ctx context.Context, barcode string) (*models.Product, error)
 }
 
 type productRepo struct {
@@ -102,4 +103,11 @@ func (r *productRepo) DecreaseStock(ctx context.Context, productID primitive.Obj
 		bson.M{"$inc": bson.M{"stock_qty": -qty}},
 	)
 	return err
+}
+func (r *productRepo) FindByBarcode(ctx context.Context, barcode string) (*models.Product, error) {
+	var p models.Product
+	if err := r.col.FindOne(ctx, bson.M{"barcode": barcode}).Decode(&p); err != nil {
+		return nil, err
+	}
+	return &p, nil
 }

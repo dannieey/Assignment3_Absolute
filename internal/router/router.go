@@ -8,6 +8,7 @@ import (
 
 	"github.com/dannieey/Assignment3_Absolute/internal/db"
 	"github.com/dannieey/Assignment3_Absolute/internal/handler"
+	"github.com/dannieey/Assignment3_Absolute/internal/middleware"
 	"github.com/dannieey/Assignment3_Absolute/internal/repository"
 	"github.com/dannieey/Assignment3_Absolute/internal/service"
 )
@@ -33,10 +34,15 @@ func New() (http.Handler, error) {
 	productRepo := repository.NewProductRepo(database)
 	orderRepo := repository.NewOrderRepo(database)
 	userRepo := repository.NewUserRepo(database)
+	categoryRepo := repository.NewCategoryRepo(database)
+	brandRepo := repository.NewBrandRepo(database)
 
 	productService := service.NewProductService(productRepo)
 	orderService := service.NewOrderService(orderRepo, productService)
 	authService := service.NewAuthService(userRepo)
+
+	ch := handler.NewCategoryHandler(categoryRepo)
+	bh := handler.NewBrandHandler(brandRepo)
 
 	ph := handler.NewProductHandler(productService)
 	oh := handler.NewOrderHandler(orderService)
@@ -115,6 +121,68 @@ func New() (http.Handler, error) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("staff ok"))
 	})))
+
+	mux.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ch.List(w, r)
+	})
+
+	mux.HandleFunc("/brands", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		bh.List(w, r)
+	})
+
+	mux.Handle("/staff/categories",
+		middleware.RequireAuth(
+			middleware.RequireRole("staff",
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					switch r.Method {
+					case http.MethodPost:
+						ch.Create(w, r)
+					case http.MethodPatch:
+						ch.Update(w, r)
+					case http.MethodDelete:
+						ch.Delete(w, r)
+					default:
+						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+					}
+				}),
+			),
+		),
+	)
+
+	mux.Handle("/staff/brands",
+		middleware.RequireAuth(
+			middleware.RequireRole("staff",
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					switch r.Method {
+					case http.MethodPost:
+						bh.Create(w, r)
+					case http.MethodPatch:
+						bh.Update(w, r)
+					case http.MethodDelete:
+						bh.Delete(w, r)
+					default:
+						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+					}
+				}),
+			),
+		),
+	)
+
+	mux.HandleFunc("/products/barcode", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ph.FindByBarcode(w, r)
+	})
 
 	log.Println("Router initialized")
 	return mux, nil
