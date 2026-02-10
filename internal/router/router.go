@@ -36,10 +36,14 @@ func New() (http.Handler, error) {
 	userRepo := repository.NewUserRepo(database)
 	categoryRepo := repository.NewCategoryRepo(database)
 	brandRepo := repository.NewBrandRepo(database)
+	cartRepo := repository.NewCartRepo(database)
+	wishlistRepo := repository.NewWishlistRepo(database)
 
 	productService := service.NewProductService(productRepo)
 	orderService := service.NewOrderService(orderRepo, productService)
 	authService := service.NewAuthService(userRepo)
+	cartService := service.NewCartService(cartRepo, productRepo)
+	wishlistService := service.NewWishlistService(wishlistRepo, productRepo)
 
 	ch := handler.NewCategoryHandler(categoryRepo)
 	bh := handler.NewBrandHandler(brandRepo)
@@ -47,6 +51,9 @@ func New() (http.Handler, error) {
 	ph := handler.NewProductHandler(productService)
 	oh := handler.NewOrderHandler(orderService)
 	ah := handler.NewAuthHandler(authService)
+	cartH := handler.NewCartHandler(cartService)
+	wishlistH := handler.NewWishlistHandler(wishlistService)
+	profileH := handler.NewProfileHandler(userRepo, orderService)
 
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -192,6 +199,58 @@ func New() (http.Handler, error) {
 		ph.FindByBarcode(w, r)
 	})
 
+	mux.HandleFunc("/products/search", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		ph.ListWithFilter(w, r)
+	})
+
+	mux.Handle("/profile", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		profileH.Get(w, r)
+	})))
+
+	mux.Handle("/cart", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			cartH.Get(w, r)
+		case http.MethodPost:
+			cartH.Add(w, r)
+		case http.MethodPatch:
+			cartH.Update(w, r)
+		case http.MethodDelete:
+			cartH.Remove(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	mux.Handle("/wishlist", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			wishlistH.Get(w, r)
+		case http.MethodPost:
+			wishlistH.Add(w, r)
+		case http.MethodDelete:
+			wishlistH.Remove(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})))
+
+	mux.Handle("/wishlist/check", AuthOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		wishlistH.Check(w, r)
+	})))
+
 	log.Println("Router initialized")
-	return mux, nil
+	return middleware.CORS(mux), nil
 }
