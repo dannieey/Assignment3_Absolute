@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ctxKey string
@@ -65,4 +66,16 @@ func RequireRole(requiredRole string, next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+func UserIDFromContext(ctx context.Context) primitive.ObjectID {
+	userIDHex, ok := ctx.Value(CtxUserID).(string)
+	if !ok || userIDHex == "" {
+		return primitive.NilObjectID
+	}
+
+	id, err := primitive.ObjectIDFromHex(userIDHex)
+	if err != nil {
+		return primitive.NilObjectID
+	}
+	return id
 }

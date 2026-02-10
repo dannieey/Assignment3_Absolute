@@ -36,19 +36,16 @@ func (s *OrderService) Create(ctx context.Context, order *models.Order) (primiti
 		return primitive.NilObjectID, fmt.Errorf("items missing")
 	}
 
-	// 1) Calculate prices from DB and reserve stock immediately
 	var total float64
 
 	for i := range order.Items {
 		item := &order.Items[i]
 
-		// get product by id (add this method in ProductService, see below)
 		p, err := s.productService.GetByID(ctx, item.ProductID)
 		if err != nil {
 			return primitive.NilObjectID, fmt.Errorf("product not found: %s", item.ProductID.Hex())
 		}
 
-		// reserve stock NOW (atomic condition inside repo)
 		if err := s.productService.DecreaseStock(ctx, item.ProductID, item.Quantity); err != nil {
 			return primitive.NilObjectID, fmt.Errorf("not enough stock for product %s", item.ProductID.Hex())
 		}
@@ -60,12 +57,55 @@ func (s *OrderService) Create(ctx context.Context, order *models.Order) (primiti
 	order.TotalPrice = total
 	order.Status = "NEW"
 
-	// 2) Save order
-	return s.repo.Create(ctx, order)
+	order.History = []models.OrderStatusHistory{
+		{
+			Status:    "NEW",
+			Timestamp: time.Now(),
+			Note:      "Order created",
+		},
+	}
+
+	id, err := s.repo.Create(ctx, order)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	select {
+	case s.orderQueue <- id:
+	default:
+		log.Printf("[worker] orderQueue is full, skipping async processing for order %s", id.Hex())
+	}
+
+	return id, nil
 }
 
 func (s *OrderService) GetHistory(ctx context.Context, userID primitive.ObjectID) ([]models.Order, error) {
 	return s.repo.FindByUserID(ctx, userID)
+}
+
+func (s *OrderService) GetTracking(
+	ctx context.Context,
+	orderID primitive.ObjectID,
+	userID primitive.ObjectID,
+) (*models.OrderTracking, error) {
+
+	order, err := s.repo.FindByID(ctx, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("order not found")
+	}
+
+	if order.UserID != userID {
+		return nil, fmt.Errorf("forbidden")
+	}
+
+	return &models.OrderTracking{
+		OrderID:   order.ID,
+		UserID:    order.UserID,
+		Status:    order.Status,
+		History:   order.History,
+		CreatedAt: order.CreatedAt,
+		UpdatedAt: order.UpdatedAt,
+	}, nil
 }
 func (s *OrderService) startWorker() {
 	log.Println("[worker] Order worker started")
@@ -81,14 +121,23 @@ func (s *OrderService) startWorker() {
 }
 
 func (s *OrderService) processOrder(orderID primitive.ObjectID) {
-	log.Printf("[worker] Start processing order %s", orderID.Hex())
-	time.Sleep(2 * time.Second)
+	log.Printf("[worker] processing order %s", orderID.Hex())
 
-	_ = s.repo.UpdateStatus(context.Background(), orderID, "PROCESSING")
 	time.Sleep(2 * time.Second)
-	_ = s.repo.UpdateStatus(context.Background(), orderID, "DONE")
+	_ = s.repo.UpdateStatusWithHistory(
+		context.Background(),
+		orderID,
+		"PROCESSING",
+		"Order is being prepared",
+	)
 
-	log.Printf("[worker] Finished processing order %s", orderID.Hex())
+	time.Sleep(2 * time.Second)
+	_ = s.repo.UpdateStatusWithHistory(
+		context.Background(),
+		orderID,
+		"DONE",
+		"Order ready for pickup",
+	)
 }
 
 func (s *OrderService) StopWorker() {

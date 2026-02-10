@@ -16,6 +16,7 @@ type OrderRepo interface {
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.Order, error)
 	FindByUserID(ctx context.Context, userID primitive.ObjectID) ([]models.Order, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
+	UpdateStatusWithHistory(ctx context.Context, id primitive.ObjectID, status string, note string) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 }
 
@@ -68,6 +69,30 @@ func (r *orderRepo) UpdateStatus(ctx context.Context, id primitive.ObjectID, sta
 			"status":     status,
 			"updated_at": time.Now(),
 		}},
+	)
+	return err
+}
+func (r *orderRepo) UpdateStatusWithHistory(ctx context.Context, id primitive.ObjectID, status string, note string) error {
+	historyEntry := bson.M{
+		"status":    status,
+		"timestamp": time.Now(),
+	}
+	if note != "" {
+		historyEntry["note"] = note
+	}
+
+	_, err := r.col.UpdateOne(
+		ctx,
+		bson.M{"_id": id},
+		bson.M{
+			"$set": bson.M{
+				"status":     status,
+				"updated_at": time.Now(),
+			},
+			"$push": bson.M{
+				"history": historyEntry,
+			},
+		},
 	)
 	return err
 }

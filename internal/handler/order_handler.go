@@ -103,3 +103,28 @@ func (h *OrderHandler) History(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, orders)
 }
+
+// customer+staff
+func (h *OrderHandler) GetTracking(w http.ResponseWriter, r *http.Request) {
+	orderIDStr := r.URL.Query().Get("id")
+	if orderIDStr == "" {
+		http.Error(w, "id required", http.StatusBadRequest)
+		return
+	}
+
+	orderID, err := primitive.ObjectIDFromHex(orderIDStr)
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	userID := middleware.UserIDFromContext(r.Context())
+
+	tracking, err := h.service.GetTracking(r.Context(), orderID, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, tracking)
+}
