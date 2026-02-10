@@ -10,6 +10,7 @@ import { TrackOrderPage } from './pages/TrackOrderPage'
 import { LoginPage } from './pages/LoginPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { ProductsPage } from './pages/ProductsPage'
+import { StaffPage } from './pages/StaffPage'
 import { useAuth } from './auth'
 import { cartApi, profileApi, wishlistApi } from './api'
 
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/wishlist" element={<WishlistPage auth={auth} />} />
           <Route path="/track" element={<TrackOrderPage />} />
           <Route path="/orders" element={<OrdersPage auth={auth} />} />
+          <Route path="/staff" element={<StaffPage auth={auth} />} />
         </Routes>
       </div>
 

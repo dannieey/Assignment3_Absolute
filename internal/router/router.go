@@ -45,7 +45,7 @@ func New() (http.Handler, error) {
 	cartService := service.NewCartService(cartRepo, productRepo)
 	wishlistService := service.NewWishlistService(wishlistRepo, productRepo)
 
-	ch := handler.NewCategoryHandler(categoryRepo)
+	ch := handler.NewCategoryHandler(categoryRepo, productRepo)
 	bh := handler.NewBrandHandler(brandRepo)
 
 	ph := handler.NewProductHandler(productService)

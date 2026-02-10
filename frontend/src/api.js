@@ -85,3 +85,21 @@ export const wishlistApi = {
   remove: (productId) => apiRequest(`/wishlist?productId=${encodeURIComponent(productId)}`, { method: 'DELETE', auth: true }),
   check: (productId) => apiRequest(`/wishlist/check?productId=${encodeURIComponent(productId)}`, { auth: true }),
 }
+
+export const staffApi = {
+  products: {
+    create: (product) => apiRequest('/staff/products', { method: 'POST', body: product, auth: true }),
+    update: (id, product) => apiRequest(`/staff/products/update?id=${encodeURIComponent(id)}`, { method: 'PATCH', body: product, auth: true }),
+    delete: (id) => apiRequest(`/staff/products/delete?id=${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }),
+  },
+  categories: {
+    create: (category) => apiRequest('/staff/categories', { method: 'POST', body: category, auth: true }),
+    update: (id, category) => apiRequest(`/staff/categories?id=${encodeURIComponent(id)}`, { method: 'PATCH', body: category, auth: true }),
+    delete: (id) => apiRequest(`/staff/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }),
+  },
+  brands: {
+    create: (brand) => apiRequest('/staff/brands', { method: 'POST', body: brand, auth: true }),
+    update: (id, brand) => apiRequest(`/staff/brands?id=${encodeURIComponent(id)}`, { method: 'PATCH', body: brand, auth: true }),
+    delete: (id) => apiRequest(`/staff/brands?id=${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }),
+  },
+}

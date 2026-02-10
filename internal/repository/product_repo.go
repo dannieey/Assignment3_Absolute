@@ -42,6 +42,7 @@ type ProductRepo interface {
 	DecreaseStock(ctx context.Context, productID primitive.ObjectID, qty int) error
 	FindByBarcode(ctx context.Context, barcode string) (*models.Product, error)
 	Count(ctx context.Context) (int64, error)
+	CountByCategory(ctx context.Context, categoryID primitive.ObjectID) (int64, error)
 }
 
 type productRepo struct {
@@ -222,4 +223,18 @@ func (r *productRepo) ListWithFilter(ctx context.Context, f ProductFilter) (*Pro
 
 func (r *productRepo) Count(ctx context.Context) (int64, error) {
 	return r.col.CountDocuments(ctx, bson.M{})
+}
+
+func (r *productRepo) CountByCategory(ctx context.Context, categoryID primitive.ObjectID) (int64, error) {
+	// Support both legacy/accidental field names and types
+	catHex := categoryID.Hex()
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"category_id": categoryID},
+			bson.M{"categoryId": categoryID},
+			bson.M{"category_id": catHex},
+			bson.M{"categoryId": catHex},
+		},
+	}
+	return r.col.CountDocuments(ctx, filter)
 }
