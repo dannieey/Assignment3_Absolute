@@ -31,8 +31,8 @@ export function useAuth() {
     return t
   }, [])
 
-  const register = useCallback(async ({ fullName, email, password }) => {
-    const data = await authApi.register(fullName, email, password)
+  const register = useCallback(async ({ fullName, email, password, role = '', staffCode = '' }) => {
+    const data = await authApi.register(fullName, email, password, { role, staffCode })
     const t = data?.token || data?.accessToken
     if (t) {
       setToken(t)
@@ -49,4 +49,3 @@ export function useAuth() {
 
   return { token, isAuthed, login, register, logout }
 }
-
