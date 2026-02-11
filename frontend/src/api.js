@@ -41,7 +41,7 @@ export async function apiRequest(path, { method = 'GET', body, auth = true } = {
 
 export const authApi = {
   login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: { email, password }, auth: false }),
-  register: (fullName, email, password) => apiRequest('/auth/register', { method: 'POST', body: { fullName, email, password }, auth: false }),
+  register: (fullName, email, password, { role = '', staffCode = '' } = {}) => apiRequest('/auth/register', { method: 'POST', body: { fullName, email, password, role, staffCode }, auth: false }),
 };
 
 export const categoriesApi = {

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/service"
@@ -17,10 +18,11 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler {
 }
 
 type registerReq struct {
-	FullName string `json:"fullName"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	FullName  string `json:"fullName"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Role      string `json:"role"`
+	StaffCode string `json:"staffCode"`
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +38,21 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	role := "customer"
+
+	requestedRole := strings.TrimSpace(strings.ToLower(req.Role))
+	if requestedRole == "staff" {
+		code := strings.TrimSpace(req.StaffCode)
+		secret := strings.TrimSpace(os.Getenv("STAFF_REGISTER_CODE"))
+		if secret == "" {
+			secret = "Staff2006"
+		}
+		if code == secret {
+			role = "staff"
+		} else {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "Invalid staffCode"})
+			return
+		}
+	}
 
 	id, err := h.svc.Register(r.Context(), req.FullName, req.Email, req.Password, role)
 	if err != nil {

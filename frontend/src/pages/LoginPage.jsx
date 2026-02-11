@@ -10,6 +10,8 @@ export function LoginPage({ auth }) {
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isStaff, setIsStaff] = useState(false)
+  const [staffCode, setStaffCode] = useState('')
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -20,7 +22,7 @@ export function LoginPage({ auth }) {
         await auth.login({ email, password })
         nav('/profile')
       } else {
-        const t = await auth.register({ fullName, email, password })
+        const t = await auth.register({ fullName, email, password, role: isStaff ? 'staff' : '', staffCode })
         if (!t) {
           setMsg('Account is created. Now login.')
           setMode('login')
@@ -72,6 +74,23 @@ export function LoginPage({ auth }) {
                     placeholder="Full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                ) : null}
+
+                {mode === 'register' ? (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked={isStaff} onChange={(e) => setIsStaff(e.target.checked)} />
+                    Register as staff
+                  </label>
+                ) : null}
+
+                {mode === 'register' && isStaff ? (
+                  <input
+                    className="px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-200"
+                    placeholder="Staff code"
+                    value={staffCode}
+                    onChange={(e) => setStaffCode(e.target.value)}
                     required
                   />
                 ) : null}
