@@ -22,7 +22,7 @@ export function LoginPage({ auth }) {
       } else {
         const t = await auth.register({ fullName, email, password })
         if (!t) {
-          setMsg('Аккаунт создан. Теперь залогинься.')
+          setMsg('Account is created. Now login.')
           setMode('login')
         } else {
           nav('/profile')

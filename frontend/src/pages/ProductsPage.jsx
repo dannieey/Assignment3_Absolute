@@ -233,7 +233,7 @@ export function ProductsPage({ auth, onCartChanged, onWishlistChanged }) {
           })}
         </div>
 
-        {!loading && !err && products.length === 0 ? <div className="mt-6 text-slate-600">Ничего не найдено.</div> : null}
+        {!loading && !err && products.length === 0 ? <div className="mt-6 text-slate-600">Nothing was found</div> : null}
       </Container>
     </div>
   )
