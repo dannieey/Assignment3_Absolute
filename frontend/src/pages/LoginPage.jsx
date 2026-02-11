@@ -42,7 +42,7 @@ export function LoginPage({ auth }) {
           <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden">
             <div className="p-8">
               <div className="text-3xl font-extrabold text-slate-900">{mode === 'login' ? 'Login' : 'Register'}</div>
-              <div className="mt-2 text-slate-600">/auth/login и /auth/register</div>
+              <div className="mt-2 text-slate-600">Sign in to access your profile, cart, and orders.</div>
 
               <div className="mt-6 flex gap-2">
                 <button
@@ -104,7 +104,7 @@ export function LoginPage({ auth }) {
               </form>
 
               <div className="mt-4 text-xs text-slate-500">
-                После логина токен сохраняется в <code>localStorage.token</code>.
+                You’ll stay signed in on this device.
               </div>
             </div>
           </div>
@@ -113,4 +113,3 @@ export function LoginPage({ auth }) {
     </div>
   )
 }
-

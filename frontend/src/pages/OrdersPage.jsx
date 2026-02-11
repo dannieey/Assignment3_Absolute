@@ -38,7 +38,7 @@ export function OrdersPage({ auth }) {
     <div className="bg-slate-50">
       <Container className="py-10">
         <div className="text-3xl font-extrabold text-slate-900">My orders</div>
-        <div className="mt-2 text-slate-600">GET /orders/history</div>
+        <div className="mt-2 text-slate-600">Your order history and statuses.</div>
 
         {!auth?.isAuthed ? <div className="mt-6 text-slate-600">Нужно залогиниться.</div> : null}
         {loading ? <div className="mt-6 text-slate-600">Loading…</div> : null}
@@ -60,4 +60,3 @@ export function OrdersPage({ auth }) {
     </div>
   )
 }
-

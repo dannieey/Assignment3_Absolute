@@ -28,7 +28,7 @@ export function StaffPage({ auth }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
 
-  const [tab, setTab] = useState('products') // products | categories | brands
+  const [tab, setTab] = useState('products')
 
   const [form, setForm] = useState({
     id: '',
@@ -96,7 +96,6 @@ export function StaffPage({ auth }) {
 
   useEffect(() => {
     if (isStaff) loadAll()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStaff])
 
   if (!auth?.isAuthed) {

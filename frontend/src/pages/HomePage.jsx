@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { categoriesApi, productsApi, cartApi, wishlistApi } from '../api'
 import { Container } from '../components/Container'
 import { useToast } from '../components/toast'
+import { Link } from 'react-router-dom'
 
 function Pill({ children, active = false, onClick }) {
   return (
@@ -35,17 +36,28 @@ function CategoryCard({ name, items, color, active, onClick }) {
   )
 }
 
-function ProductCard({ name, category, price, oldPrice, onAddToCart, onAddToWishlist, wishlistLoading }) {
+function ProductCard({ name, category, price, oldPrice, onAddToCart, onAddToWishlist, wishlistLoading, imageUrl }) {
   return (
     <div className="group rounded-2xl bg-white border border-slate-100 overflow-hidden hover:shadow-md transition">
       <div className="p-4">
-        <div className="h-28 rounded-xl bg-slate-50 border border-slate-100" />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="h-28 w-full rounded-xl border border-slate-100 object-cover bg-slate-50"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        ) : (
+          <div className="h-28 rounded-xl bg-slate-50 border border-slate-100" />
+        )}
         <div className="mt-3 text-xs text-slate-500">{category}</div>
         <div className="font-semibold text-slate-900 leading-tight line-clamp-2 min-h-[40px]">{name}</div>
         <div className="mt-2 flex items-end justify-between gap-2">
           <div className="flex items-end gap-2">
-            <div className="text-emerald-700 font-bold">{price != null ? `$${price}` : ''}</div>
-            {oldPrice ? <div className="text-xs text-slate-400 line-through">${oldPrice}</div> : null}
+            <div className="text-emerald-700 font-bold">{price != null ? `${price} ₸` : ''}</div>
+            {oldPrice ? <div className="text-xs text-slate-400 line-through">{oldPrice} ₸</div> : null}
           </div>
           <button
             type="button"
@@ -74,12 +86,24 @@ function normalizeId(x) {
 }
 
 function SmallListItem({ p, busy, onAddToCart, onAddToWishlist }) {
+  const img = p?.imageUrl || p?.imageURL || p?.image || ''
   return (
     <div className="flex items-center gap-3 group">
-      <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0" />
+      {img ? (
+        <img
+          src={img}
+          alt={p?.name || ''}
+          className="h-12 w-12 rounded-xl border border-slate-100 object-cover bg-slate-50 flex-shrink-0"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+          }}
+        />
+      ) : (
+        <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0" />
+      )}
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-slate-900 truncate">{p?.name || 'Unnamed'}</div>
-        <div className="text-sm text-emerald-700 font-bold">{p?.price != null ? `$${p.price}` : ''}</div>
+        <div className="text-sm text-emerald-700 font-bold">{p?.price != null ? `${p.price} ₸` : ''}</div>
       </div>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
         <button
@@ -111,6 +135,7 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
   const [categoriesErr, setCategoriesErr] = useState('')
 
   const [activeCategoryId, setActiveCategoryId] = useState('')
+  const [featuredCategoryId, setFeaturedCategoryId] = useState('')
 
   const [products, setProducts] = useState([])
   const [productsErr, setProductsErr] = useState('')
@@ -121,6 +146,8 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
   // bottom lists data
   const [bottomProducts, setBottomProducts] = useState([])
   const [bottomErr, setBottomErr] = useState('')
+
+  const [subscribeEmail, setSubscribeEmail] = useState('')
 
   const pills = useMemo(() => {
     const top = categories.slice(0, 4)
@@ -140,7 +167,7 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
     setProductsErr('')
 
     productsApi
-      .list({ q: searchQuery || '', categoryId: activeCategoryId })
+      .list({ q: searchQuery || '', categoryId: featuredCategoryId })
       .then((d) => {
         if (cancelled) return
         setProducts(Array.isArray(d) ? d : [])
@@ -157,7 +184,7 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
     return () => {
       cancelled = true
     }
-  }, [activeCategoryId, searchQuery])
+  }, [featuredCategoryId, searchQuery])
 
   useEffect(() => {
     let cancelled = false
@@ -237,6 +264,20 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
     }
   }
 
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim())
+  }
+
+  function handleSubscribe() {
+    const v = String(subscribeEmail || '').trim()
+    if (!isValidEmail(v)) {
+      toast.push('Enter a valid email', { type: 'error' })
+      return
+    }
+    toast.push('Subscribed successfully', { type: 'success' })
+    setSubscribeEmail('')
+  }
+
   return (
     <div className="bg-slate-50">
       <Container className="py-8">
@@ -255,8 +296,17 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
                 <input
                   className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-emerald-200"
                   placeholder="Enter your email address"
+                  value={subscribeEmail}
+                  onChange={(e) => setSubscribeEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSubscribe()
+                  }}
                 />
-                <button className="px-5 py-3 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500" type="button">
+                <button
+                  className="px-5 py-3 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
+                  type="button"
+                  onClick={handleSubscribe}
+                >
                   Subscribe
                 </button>
               </div>
@@ -276,16 +326,10 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
               <div className="text-2xl font-extrabold text-slate-900">Explore Categories</div>
               <div className="text-sm text-slate-600">Pick from popular groups</div>
             </div>
-            <div className="hidden sm:flex gap-2">
-              {pills.map((p) => (
-                <Pill
-                  key={p.id}
-                  active={activeCategoryId === p.id}
-                  onClick={() => setActiveCategoryId(p.id)}
-                >
-                  {p.name}
-                </Pill>
-              ))}
+            <div className="flex items-center gap-2">
+              <Link to="/categories" className="hidden sm:inline-flex px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50">
+                View all
+              </Link>
             </div>
           </div>
 
@@ -306,6 +350,12 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
               )
             })}
           </div>
+
+          <div className="mt-5 sm:hidden">
+            <Link to="/categories" className="inline-flex px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50">
+              View all categories
+            </Link>
+          </div>
         </div>
 
         {/* Featured */}
@@ -319,12 +369,12 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
               </div>
             </div>
             <div className="hidden sm:flex gap-2">
-              <Pill active={!activeCategoryId} onClick={() => setActiveCategoryId('')}>All</Pill>
+              <Pill active={!featuredCategoryId} onClick={() => setFeaturedCategoryId('')}>All</Pill>
               {categories.slice(0, 4).map((c) => (
                 <Pill
                   key={normalizeId(c)}
-                  active={activeCategoryId === normalizeId(c)}
-                  onClick={() => setActiveCategoryId(normalizeId(c))}
+                  active={featuredCategoryId === normalizeId(c)}
+                  onClick={() => setFeaturedCategoryId(normalizeId(c))}
                 >
                   {c.name}
                 </Pill>
@@ -345,6 +395,7 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
                 wishlistLoading={Boolean(wishBusy[normalizeId(p)])}
                 onAddToCart={() => addToCart(normalizeId(p))}
                 onAddToWishlist={() => addToWishlist(normalizeId(p))}
+                imageUrl={p.imageUrl || p.imageURL || p.image || ''}
               />
             ))}
           </div>
@@ -354,9 +405,15 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
               <div className="text-xs inline-block px-3 py-1 rounded-full bg-white/70 border border-white text-slate-700">
                 Free delivery
               </div>
-              <div className="mt-3 text-2xl font-extrabold text-slate-900">Free delivery over $50</div>
-              <div className="mt-2 text-slate-600">Shop $50 product and get free delivery anywhere.</div>
-              <button className="mt-5 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500" type="button">
+              <div className="mt-3 text-2xl font-extrabold text-slate-900">Free delivery over ₸50 000</div>
+              <div className="mt-2 text-slate-600">Shop products for ₸50 000 and get free delivery anywhere.</div>
+              <button
+                className="mt-5 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                type="button"
+                onClick={() => {
+                  window.location.href = '/products'
+                }}
+              >
                 Shop Now
               </button>
               <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-amber-200/40 blur-2xl" />
@@ -368,7 +425,13 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
               </div>
               <div className="mt-3 text-2xl font-extrabold text-slate-900">Organic Food</div>
               <div className="mt-2 text-slate-600">Save up to 60% off on your first order.</div>
-              <button className="mt-5 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500" type="button">
+              <button
+                className="mt-5 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                type="button"
+                onClick={() => {
+                  window.location.href = '/products?q=' + encodeURIComponent('organic')
+                }}
+              >
                 Order Now
               </button>
               <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-emerald-200/40 blur-2xl" />

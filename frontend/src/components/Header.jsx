@@ -12,20 +12,20 @@ export function Header({ cartCount = 0, wishlistCount = 0, userLabel = 'Guest', 
       <Container className="py-3">
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2 min-w-fit" onClick={() => setMobileOpen(false)}>
-            <div className="h-9 w-9 rounded-lg bg-emerald-600 text-white grid place-items-center font-bold">G</div>
+            <div className="h-9 w-9 rounded-lg bg-emerald-600 text-white grid place-items-center font-bold">D</div>
             <div className="leading-tight">
-              <div className="font-extrabold text-slate-900">Groceyish</div>
+              <div className="font-extrabold text-slate-900">Dito</div>
               <div className="text-xs text-slate-500 -mt-0.5">GROCERY</div>
             </div>
           </Link>
 
           <div className="hidden md:flex items-center gap-2 ml-6 flex-1">
-            <button
-              type="button"
+            <Link
+              to="/categories"
               className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white hover:bg-slate-50"
             >
               All Categories
-            </button>
+            </Link>
             <div className="flex items-center flex-1 rounded-lg border border-slate-200 bg-white overflow-hidden">
               <input
                 className="flex-1 px-3 py-2 outline-none text-sm text-slate-700"
@@ -134,13 +134,14 @@ export function Header({ cartCount = 0, wishlistCount = 0, userLabel = 'Guest', 
       <div className="border-t border-slate-100 bg-white">
         <Container className="py-2">
           <div className="flex items-center gap-3 text-sm">
-            <button
-              type="button"
+            <Link
+              to="/categories"
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+              onClick={() => setMobileOpen(false)}
             >
               <Icon name="grid" className="w-4 h-4" />
               Browse All Categories
-            </button>
+            </Link>
             <nav className="hidden md:flex items-center gap-4 text-slate-600">
               <Link className="hover:text-emerald-700" to="/">Home</Link>
               <Link className="hover:text-emerald-700" to="/products">Catalog</Link>
@@ -149,7 +150,7 @@ export function Header({ cartCount = 0, wishlistCount = 0, userLabel = 'Guest', 
             </nav>
             <div className="ml-auto hidden md:flex items-center gap-2 text-slate-600">
               <Icon name="phone" className="w-4 h-4" />
-              <span className="font-semibold text-slate-800">1233-7777</span>
+              <span className="font-semibold text-slate-800">8 708 774 91 52</span>
               <span className="text-slate-500">24/7 support center</span>
             </div>
           </div>

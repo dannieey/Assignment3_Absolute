@@ -11,6 +11,13 @@ import { LoginPage } from './pages/LoginPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { StaffPage } from './pages/StaffPage'
+import { CategoriesPage } from './pages/CategoriesPage'
+import { AboutPage } from './pages/AboutPage'
+import { ContactPage } from './pages/ContactPage'
+import { DealsPage } from './pages/DealsPage'
+import { PromotionsPage } from './pages/PromotionsPage'
+import { HelpPage } from './pages/HelpPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { useAuth } from './auth'
 import { cartApi, profileApi, wishlistApi } from './api'
 
@@ -76,6 +83,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage searchQuery={searchQuery} auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
           <Route path="/products" element={<ProductsPage auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/login" element={<LoginPage auth={auth} />} />
           <Route path="/profile" element={<ProfilePage auth={auth} />} />
           <Route path="/cart" element={<CartPage auth={auth} />} />
@@ -83,6 +91,12 @@ export default function App() {
           <Route path="/track" element={<TrackOrderPage />} />
           <Route path="/orders" element={<OrdersPage auth={auth} />} />
           <Route path="/staff" element={<StaffPage auth={auth} />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/deals" element={<DealsPage />} />
+          <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
 
