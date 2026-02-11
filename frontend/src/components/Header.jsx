@@ -124,6 +124,9 @@ export function Header({ cartCount = 0, wishlistCount = 0, userLabel = 'Guest', 
             <Link className="block px-4 py-3 text-slate-700 hover:bg-slate-50" to="/track" onClick={() => setMobileOpen(false)}>
               Track order
             </Link>
+            <Link className="block px-4 py-3 text-slate-700 hover:bg-slate-50" to="/barcode" onClick={() => setMobileOpen(false)}>
+              Barcode lookup
+            </Link>
             <Link className="block px-4 py-3 text-slate-700 hover:bg-slate-50" to="/login" onClick={() => setMobileOpen(false)}>
               Login / Register
             </Link>
@@ -147,6 +150,7 @@ export function Header({ cartCount = 0, wishlistCount = 0, userLabel = 'Guest', 
               <Link className="hover:text-emerald-700" to="/products">Catalog</Link>
               <Link className="hover:text-emerald-700" to="/orders">Orders</Link>
               <Link className="hover:text-emerald-700" to="/track">Track order</Link>
+              <Link className="hover:text-emerald-700" to="/barcode">Barcode lookup</Link>
             </nav>
             <div className="ml-auto hidden md:flex items-center gap-2 text-slate-600">
               <Icon name="phone" className="w-4 h-4" />

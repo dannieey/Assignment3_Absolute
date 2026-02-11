@@ -20,6 +20,8 @@ import { HelpPage } from './pages/HelpPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { useAuth } from './auth'
 import { cartApi, profileApi, wishlistApi } from './api'
+import { BarcodeLookupPage } from './pages/BarcodeLookupPage'
+import { ProductDetailsPage } from './pages/ProductDetailsPage'
 
 export default function App() {
   const auth = useAuth()
@@ -83,7 +85,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage searchQuery={searchQuery} auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
           <Route path="/products" element={<ProductsPage auth={auth} onCartChanged={refreshBadges} onWishlistChanged={refreshBadges} />} />
+          <Route path="/products/:id" element={<ProductDetailsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/barcode" element={<BarcodeLookupPage auth={auth} />} />
           <Route path="/login" element={<LoginPage auth={auth} />} />
           <Route path="/profile" element={<ProfilePage auth={auth} />} />
           <Route path="/cart" element={<CartPage auth={auth} />} />

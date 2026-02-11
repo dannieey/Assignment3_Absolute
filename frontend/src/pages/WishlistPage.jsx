@@ -79,7 +79,7 @@ export function WishlistPage({ auth }) {
               </button>
             </div>
           ))}
-          {arr.length === 0 && !loading && !err ? <div className="text-slate-600">Wishlist пустой.</div> : null}
+          {arr.length === 0 && !loading && !err ? <div className="text-slate-600">Wishlist is empty</div> : null}
         </div>
       </Container>
     </div>
