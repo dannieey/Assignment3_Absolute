@@ -36,24 +36,26 @@ function CategoryCard({ name, items, color, active, onClick }) {
   )
 }
 
-function ProductCard({ name, category, price, oldPrice, onAddToCart, onAddToWishlist, wishlistLoading, imageUrl }) {
+function ProductCard({ id, name, category, price, oldPrice, onAddToCart, onAddToWishlist, wishlistLoading, imageUrl }) {
   return (
     <div className="group rounded-2xl bg-white border border-slate-100 overflow-hidden hover:shadow-md transition">
       <div className="p-4">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={name}
-            className="h-28 w-full rounded-xl border border-slate-100 object-cover bg-slate-50"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-            }}
-          />
-        ) : (
-          <div className="h-28 rounded-xl bg-slate-50 border border-slate-100" />
-        )}
-        <div className="mt-3 text-xs text-slate-500">{category}</div>
-        <div className="font-semibold text-slate-900 leading-tight line-clamp-2 min-h-[40px]">{name}</div>
+        <Link to={id ? `/products/${encodeURIComponent(id)}` : '#'} className="block" aria-label={name || 'Product'}>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={name}
+              className="h-28 w-full rounded-xl border border-slate-100 object-cover bg-slate-50"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+          ) : (
+            <div className="h-28 rounded-xl bg-slate-50 border border-slate-100" />
+          )}
+          <div className="mt-3 text-xs text-slate-500">{category}</div>
+          <div className="font-semibold text-slate-900 leading-tight line-clamp-2 min-h-[40px] group-hover:text-emerald-700">{name}</div>
+        </Link>
         <div className="mt-2 flex items-end justify-between gap-2">
           <div className="flex items-end gap-2">
             <div className="text-emerald-700 font-bold">{price != null ? `${price} ₸` : ''}</div>
@@ -87,30 +89,33 @@ function normalizeId(x) {
 
 function SmallListItem({ p, busy, onAddToCart, onAddToWishlist }) {
   const img = p?.imageUrl || p?.imageURL || p?.image || ''
+  const pid = normalizeId(p)
   return (
     <div className="flex items-center gap-3 group">
-      {img ? (
-        <img
-          src={img}
-          alt={p?.name || ''}
-          className="h-12 w-12 rounded-xl border border-slate-100 object-cover bg-slate-50 flex-shrink-0"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-          }}
-        />
-      ) : (
-        <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0" />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-slate-900 truncate">{p?.name || 'Unnamed'}</div>
-        <div className="text-sm text-emerald-700 font-bold">{p?.price != null ? `${p.price} ₸` : ''}</div>
-      </div>
+      <Link to={pid ? `/products/${encodeURIComponent(pid)}` : '#'} className="flex items-center gap-3 min-w-0 flex-1">
+        {img ? (
+          <img
+            src={img}
+            alt={p?.name || ''}
+            className="h-12 w-12 rounded-xl border border-slate-100 object-cover bg-slate-50 flex-shrink-0"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-slate-900 truncate group-hover:text-emerald-700">{p?.name || 'Unnamed'}</div>
+          <div className="text-sm text-emerald-700 font-bold">{p?.price != null ? `${p.price} ₸` : ''}</div>
+        </div>
+      </Link>
       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
         <button
           type="button"
           className="px-2 py-1 text-xs rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
           onClick={onAddToCart}
-          disabled={!p?._id || busy}
+          disabled={!pid || busy}
           title="Add to cart"
         >
           +Cart
@@ -119,7 +124,7 @@ function SmallListItem({ p, busy, onAddToCart, onAddToWishlist }) {
           type="button"
           className="px-2 py-1 text-xs rounded-lg border border-slate-200 hover:bg-slate-50"
           onClick={onAddToWishlist}
-          disabled={!p?._id || busy}
+          disabled={!pid || busy}
           title="Add to wishlist"
         >
           ♥
@@ -149,10 +154,6 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
 
   const [subscribeEmail, setSubscribeEmail] = useState('')
 
-  const pills = useMemo(() => {
-    const top = categories.slice(0, 4)
-    return [{ id: '', name: 'All' }, ...top.map((c) => ({ id: normalizeId(c), name: c.name }))]
-  }, [categories])
 
   useEffect(() => {
     categoriesApi
@@ -388,6 +389,7 @@ export function HomePage({ searchQuery, auth, onCartChanged, onWishlistChanged }
             {products.slice(0, 10).map((p, idx) => (
               <ProductCard
                 key={normalizeId(p) || idx}
+                id={normalizeId(p)}
                 name={p.name || 'Unnamed'}
                 category={p.categoryName || p.category || 'Category'}
                 price={p.price}

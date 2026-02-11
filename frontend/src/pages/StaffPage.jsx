@@ -42,6 +42,7 @@ export function StaffPage({ auth }) {
     aisle: '',
     section: '',
     shelf: '',
+    position: '',
     stockQty: 0,
     availabilityStatus: '',
     imageUrl: '',
@@ -104,7 +105,7 @@ export function StaffPage({ auth }) {
         <Container className="py-10">
           <div className="rounded-3xl bg-white border border-slate-200 p-8">
             <div className="text-3xl font-extrabold text-slate-900">Staff Panel</div>
-            <div className="mt-2 text-slate-600">Нужно залогиниться.</div>
+            <div className="mt-2 text-slate-600">Login first.</div>
           </div>
         </Container>
       </div>
@@ -127,8 +128,8 @@ export function StaffPage({ auth }) {
         <Container className="py-10">
           <div className="rounded-3xl bg-white border border-slate-200 p-8">
             <div className="text-3xl font-extrabold text-slate-900">Staff Panel</div>
-            <div className="mt-2 text-slate-600">Нет доступа. Нужна роль <b>staff</b>.</div>
-            <div className="mt-4 text-sm text-slate-600">Текущая роль: {me?.role || 'unknown'}</div>
+            <div className="mt-2 text-slate-600">Have not access.Required role <b>staff</b>.</div>
+            <div className="mt-4 text-sm text-slate-600">Current role: {me?.role || 'unknown'}</div>
           </div>
         </Container>
       </div>
@@ -148,6 +149,7 @@ export function StaffPage({ auth }) {
         aisle: form.aisle,
         section: form.section,
         shelf: form.shelf,
+        position: form.position,
         stockQty: Number(form.stockQty || 0),
         availabilityStatus: form.availabilityStatus,
         imageUrl: form.imageUrl,
@@ -177,6 +179,7 @@ export function StaffPage({ auth }) {
         aisle: form.aisle,
         section: form.section,
         shelf: form.shelf,
+        position: form.position,
         stockQty: Number(form.stockQty || 0),
         availabilityStatus: form.availabilityStatus,
         imageUrl: form.imageUrl,
@@ -292,6 +295,19 @@ export function StaffPage({ auth }) {
                 <Field label="Barcode">
                   <input className="px-4 py-3 rounded-2xl border border-slate-200" value={form.barcode} onChange={(e) => setForm((s) => ({ ...s, barcode: e.target.value }))} />
                 </Field>
+                {/* Location */}
+                <Field label="Aisle">
+                  <input className="px-4 py-3 rounded-2xl border border-slate-200" value={form.aisle} onChange={(e) => setForm((s) => ({ ...s, aisle: e.target.value }))} />
+                </Field>
+                <Field label="Section">
+                  <input className="px-4 py-3 rounded-2xl border border-slate-200" value={form.section} onChange={(e) => setForm((s) => ({ ...s, section: e.target.value }))} />
+                </Field>
+                <Field label="Shelf">
+                  <input className="px-4 py-3 rounded-2xl border border-slate-200" value={form.shelf} onChange={(e) => setForm((s) => ({ ...s, shelf: e.target.value }))} />
+                </Field>
+                <Field label="Position">
+                  <input className="px-4 py-3 rounded-2xl border border-slate-200" value={form.position} onChange={(e) => setForm((s) => ({ ...s, position: e.target.value }))} />
+                </Field>
                 <Field label="Category">
                   <select className="px-4 py-3 rounded-2xl border border-slate-200 bg-white" value={form.categoryId} onChange={(e) => setForm((s) => ({ ...s, categoryId: e.target.value }))}>
                     {catOptions.map((c) => (
@@ -337,14 +353,14 @@ export function StaffPage({ auth }) {
                   type="button"
                   className="px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
                   onClick={() => setForm({
-                    id: '', name: '', description: '', barcode: '', brandId: '', categoryId: '', price: 0, currency: 'USD', aisle: '', section: '', shelf: '', stockQty: 0, availabilityStatus: '', imageUrl: '',
+                    id: '', name: '', description: '', barcode: '', brandId: '', categoryId: '', price: 0, currency: 'USD', aisle: '', section: '', shelf: '', position: '', stockQty: 0, availabilityStatus: '', imageUrl: '',
                   })}
                 >
                   Reset
                 </button>
               </div>
 
-              <div className="mt-4 text-xs text-slate-500">Для Update/Delete нужен id (выбери продукт справа).</div>
+              <div className="mt-4 text-xs text-slate-500">ID is required</div>
             </div>
 
             <div className="rounded-3xl bg-white border border-slate-200 p-6">
@@ -371,6 +387,7 @@ export function StaffPage({ auth }) {
                             aisle: p.aisle || '',
                             section: p.section || '',
                             shelf: p.shelf || '',
+                            position: p.position || p.slot || '',
                             stockQty: p.stockQty ?? 0,
                             availabilityStatus: p.availabilityStatus || '',
                             imageUrl: p.imageUrl || '',
@@ -480,4 +497,3 @@ function SimpleCrud({ title, items, onCreate, onUpdate, onDelete }) {
     </div>
   )
 }
-

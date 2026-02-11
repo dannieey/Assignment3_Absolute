@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { categoriesApi, productsApi, cartApi, wishlistApi } from '../api'
 import { Container } from '../components/Container'
 import { useToast } from '../components/toast'
@@ -189,23 +189,26 @@ export function ProductsPage({ auth, onCartChanged, onWishlistChanged }) {
             const id = pid || idx
             return (
               <div key={id} className="rounded-2xl bg-white border border-slate-200 p-4 flex flex-col">
-                {(() => {
-                  const img = normalizeImgUrl(p.imageUrl || p.imageURL || p.image || '')
-                  return img ? (
-                    <img
-                      src={img}
-                      alt={p.name || ''}
-                      className="h-24 w-full rounded-xl border border-slate-100 object-cover bg-slate-50"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <div className="h-24 rounded-xl bg-slate-50 border border-slate-100" />
-                  )
-                })()}
-                <div className="mt-3 text-xs text-slate-500">{p.categoryName || p.category || ''}</div>
-                <div className="font-semibold text-slate-900 leading-tight line-clamp-2 min-h-[40px]">{p.name}</div>
+                <Link to={pid ? `/products/${encodeURIComponent(pid)}` : '#'} className="block" aria-label={p.name || 'Product'}>
+                  {(() => {
+                    const img = normalizeImgUrl(p.imageUrl || p.imageURL || p.image || '')
+                    return img ? (
+                      <img
+                        src={img}
+                        alt={p.name || ''}
+                        className="h-24 w-full rounded-xl border border-slate-100 object-cover bg-slate-50"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="h-24 rounded-xl bg-slate-50 border border-slate-100" />
+                    )
+                  })()}
+                  <div className="mt-3 text-xs text-slate-500">{p.categoryName || p.category || ''}</div>
+                  <div className="font-semibold text-slate-900 leading-tight line-clamp-2 min-h-[40px] hover:text-emerald-700">{p.name}</div>
+                </Link>
+
                 <div className="mt-2 font-bold text-emerald-700">{p.price != null ? `${p.price} ₸` : ''}</div>
                 <div className="mt-3 grid gap-2">
                   <button

@@ -60,6 +60,8 @@ export const productsApi = {
     const qs = params.toString();
     return apiRequest(`/products${qs ? `?${qs}` : ''}`, { auth: false });
   },
+  getByBarcode: (code) => apiRequest(`/products/barcode?code=${encodeURIComponent(code)}`, { auth: false }),
+  getById: (id) => apiRequest(`/products/${encodeURIComponent(id)}`, { auth: false }),
 };
 
 export const ordersApi = {
