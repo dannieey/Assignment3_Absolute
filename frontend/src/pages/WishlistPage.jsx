@@ -36,7 +36,7 @@ export function WishlistPage({ auth }) {
         <Container className="py-10">
           <div className="rounded-3xl bg-white border border-slate-200 p-8">
             <div className="text-3xl font-extrabold text-slate-900">Wishlist</div>
-            <div className="mt-2 text-slate-600">Нужно залогиниться, чтобы смотреть избранное.</div>
+            <div className="mt-2 text-slate-600">Login first</div>
             <Link to="/login" className="inline-block mt-6 px-4 py-3 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500">
               Go to Login
             </Link>
@@ -53,7 +53,7 @@ export function WishlistPage({ auth }) {
     <div className="bg-slate-50">
       <Container className="py-10">
         <div className="text-3xl font-extrabold text-slate-900">Wishlist</div>
-        <div className="mt-2 text-slate-600">GET/POST/DELETE /wishlist</div>
+        <div className="mt-2 text-slate-600">Your saved items.</div>
 
         {loading ? <div className="mt-6 text-slate-600">Loading…</div> : null}
         {err ? <div className="mt-6 text-sm text-red-600">{err}</div> : null}
@@ -63,7 +63,7 @@ export function WishlistPage({ auth }) {
             <div key={it.productId || it._id || idx} className="rounded-2xl bg-white border border-slate-200 p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="font-semibold text-slate-900 truncate">{it.name || it.productName || 'Item'}</div>
-                {it.price != null ? <div className="text-sm text-slate-600">${it.price}</div> : null}
+                {it.price != null ? <div className="text-sm text-slate-600">{it.price} ₸</div> : null}
               </div>
               <button
                 type="button"

@@ -77,14 +77,20 @@ func (r *productRepo) List(ctx context.Context, q string, categoryID *primitive.
 		filter["name"] = bson.M{"$regex": q, "$options": "i"}
 	}
 	if categoryID != nil {
-		filter["category_id"] = *categoryID
+		catHex := categoryID.Hex()
+		filter["$or"] = bson.A{
+			bson.M{"category_id": *categoryID},
+			bson.M{"categoryId": *categoryID},
+			bson.M{"category_id": catHex},
+			bson.M{"categoryId": catHex},
+		}
 	}
 	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cur, err := r.col.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 	var list []models.Product
 	if err := cur.All(ctx, &list); err != nil {
 		return nil, err
@@ -146,7 +152,13 @@ func (r *productRepo) ListWithFilter(ctx context.Context, f ProductFilter) (*Pro
 	}
 
 	if f.CategoryID != nil {
-		filter["category_id"] = *f.CategoryID
+		catHex := f.CategoryID.Hex()
+		filter["$or"] = bson.A{
+			bson.M{"category_id": *f.CategoryID},
+			bson.M{"categoryId": *f.CategoryID},
+			bson.M{"category_id": catHex},
+			bson.M{"categoryId": catHex},
+		}
 	}
 
 	if f.BrandID != nil {
@@ -200,7 +212,7 @@ func (r *productRepo) ListWithFilter(ctx context.Context, f ProductFilter) (*Pro
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 
 	var products []models.Product
 	if err := cur.All(ctx, &products); err != nil {
@@ -226,7 +238,6 @@ func (r *productRepo) Count(ctx context.Context) (int64, error) {
 }
 
 func (r *productRepo) CountByCategory(ctx context.Context, categoryID primitive.ObjectID) (int64, error) {
-	// Support both legacy/accidental field names and types
 	catHex := categoryID.Hex()
 	filter := bson.M{
 		"$or": bson.A{

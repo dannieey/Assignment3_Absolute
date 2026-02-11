@@ -87,7 +87,7 @@ export function CartPage({ auth }) {
         <div className="flex items-end justify-between gap-3">
           <div>
             <div className="text-3xl font-extrabold text-slate-900">Cart</div>
-            <div className="mt-2 text-slate-600">GET/PATCH/DELETE /cart</div>
+            <div className="mt-2 text-slate-600">Review items and proceed to checkout.</div>
           </div>
           <button
             type="button"
@@ -111,7 +111,7 @@ export function CartPage({ auth }) {
             <div key={it.productId} className="rounded-2xl bg-white border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1">
                 <div className="font-semibold text-slate-900">{it.name}</div>
-                <div className="text-sm text-slate-600">${it.price} × {it.quantity} = ${it.subtotal}</div>
+                <div className="text-sm text-slate-600">{it.price} ₸ × {it.quantity} = {it.subtotal} ₸</div>
                 {it.inStock === false ? <div className="text-xs text-red-600">Out of stock</div> : null}
               </div>
 
@@ -168,7 +168,7 @@ export function CartPage({ auth }) {
           <div className="mt-8 rounded-3xl bg-white border border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-slate-700">
               <div>Total items: <b>{cart.totalItems}</b></div>
-              <div>Total price: <b>${cart.totalPrice}</b></div>
+              <div>Total price: <b>{cart.totalPrice} ₸</b></div>
             </div>
             <button
               type="button"

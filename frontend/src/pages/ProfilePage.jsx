@@ -60,7 +60,7 @@ export function ProfilePage({ auth }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-3xl font-extrabold text-slate-900">Profile</div>
-            <div className="mt-2 text-slate-600">Data from GET /profile</div>
+            <div className="mt-2 text-slate-600">Manage your account details.</div>
           </div>
           <button
             type="button"
