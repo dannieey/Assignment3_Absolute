@@ -4,11 +4,14 @@ import (
 	"log"
 
 	"github.com/dannieey/Assignment3_Absolute/internal/app"
-	"github.com/joho/godotenv"
+	"github.com/dannieey/Assignment3_Absolute/internal/config"
 )
 
 func main() {
-	_ = godotenv.Load()
+	if _, err := config.Load(); err != nil {
+		log.Fatal(err)
+	}
+
 	a, err := app.New()
 	if err != nil {
 		log.Fatal(err)
