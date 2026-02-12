@@ -8,6 +8,7 @@ The project is designed as a monolithic backend system that manages
 products, orders, and users. The current milestone focuses on system
 architecture and structure rather than full implementation.
 
-## How to run
+## How to run, 
 ```bash
 go run .
+npm run dev
